@@ -11,6 +11,13 @@ analytics, chain-hash audit trails, and full OTel observability.
   MinIO (S3) · Nginx edge · OTel → Prometheus / Loki / Tempo → Grafana
 - Quality gates: `ruff` + `black` + `mypy --strict` · 23 pytest tests green · k6-measured SLOs
 
+> Full documentation website (setup → architecture → security → operations):
+> **https://mintlify.wiki/ManiGOo/amrutam_backend** — Get Started (Introduction,
+> Quickstart) · Architecture · Core Concepts (Authentication, Booking Flow,
+> Consultations, Prescriptions, Payments) · Configuration & Deployment
+> (Environment, Docker Compose, Observability) · Security & Operations
+> (Security, Rate Limiting, Runbook).
+
 ## 1. Quickstart
 
 Prerequisites: Docker + Compose v2, Python 3.11+ (local dev only).
