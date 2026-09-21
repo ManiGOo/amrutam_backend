@@ -125,6 +125,8 @@ videos-in-terminal, incl. Redis-kill, api-kill, and primary-outage injections.
 - Metrics: `/metrics` (RED histogram + `bookings/payments/idempotency/outbox` counters),
   scraped per-replica; Grafana folder **Amrutam**: API RED, per-replica RED, Postgres,
   Redis, Business, SLO burn.
+- Live diagrams (Eraser — architecture, booking flow sequence, observability flow,
+  alert pipeline): https://app.eraser.io/workspace/yelKwDN4E3i4cYRXRGpk?origin=share
 - Logs: structlog JSON on stdout → Loki; Explore by `trace_id`/`event`.
 - Traces: OTel SDK → collector → Tempo (enable with `OTEL_ENABLED=true`).
 - Alerts that matter: p95>200ms, 5xx>1%, payment-fail>5%, outbox lag>60s, replica lag>10s.
