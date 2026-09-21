@@ -1,0 +1,33 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[dev]"
+      - run: ruff check src tests
+      - run: black --check src tests
+      - run: mypy src
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: amrutam, POSTGRES_PASSWORD: amrutam, POSTGRES_DB: amrutam }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U amrutam" --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -e ".[dev]"
+      - run: alembic upgrade head
+      - run: pytest --cov=src/amrutam --cov-report=term-missing
+      - run: python -c "import json; from amrutam.main import create_app; open('docs/api/openapi.json','w').write(json.dumps(create_app().openapi(), indent=2))"

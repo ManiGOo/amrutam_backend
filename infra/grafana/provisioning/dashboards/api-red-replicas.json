@@ -1,0 +1,37 @@
+{
+  "title": "Amrutam API RED — per replica",
+  "panels": [
+    {
+      "title": "Request rate per replica",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(http_request_duration_seconds_count{job=\"amrutam-api-replicas\"}[1m]))",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "title": "5xx rate per replica",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum by (instance) (rate(http_request_duration_seconds_count{job=\"amrutam-api-replicas\",status=~\"5..\"}[1m]))",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    },
+    {
+      "title": "p95 latency per replica",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (instance, le) (rate(http_request_duration_seconds_bucket{job=\"amrutam-api-replicas\"}[5m])))",
+          "legendFormat": "{{instance}}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

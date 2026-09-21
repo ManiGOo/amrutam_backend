@@ -1,0 +1,32 @@
+{
+  "title": "Amrutam Business",
+  "panels": [
+    {
+      "title": "Bookings/min by status",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (status) (rate(bookings_total[5m]))" }]
+    },
+    {
+      "title": "Payments by status",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (status) (rate(payments_total[5m]))" }]
+    },
+    {
+      "title": "Idempotency replays/min",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(idempotency_replays_total[5m])" }]
+    },
+    {
+      "title": "Outbox relayed by event",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum by (event) (rate(outbox_relayed_total[5m]))" }]
+    },
+    {
+      "title": "Consultations/day (from analytics_daily)",
+      "type": "bargauge",
+      "targets": [{ "expr": "consultations_per_day" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

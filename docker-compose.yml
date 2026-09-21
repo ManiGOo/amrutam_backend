@@ -1,0 +1,169 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./infra/nginx/amrutam.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./tls:/etc/nginx/tls:ro
+    networks: [app]
+
+  api:
+    build: .
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose: ["8000"]
+    volumes:
+      - ./tls:/app/tls
+      - jwt-secrets:/run/secrets
+    environment:
+      DATABASE_URL: postgresql+asyncpg://amrutam:amrutam@postgres-primary:5432/amrutam
+      REPLICA_DATABASE_URL: postgresql+asyncpg://amrutam:amrutam@postgres-replica:5432/amrutam
+      REDIS_URL: redis://redis:6379/0
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_ENABLED: "true"
+    networks: [app]
+
+  worker:
+    build: .
+    command: python -m amrutam.workers.relay
+    depends_on:
+      - postgres-primary
+      - redis
+    environment:
+      DATABASE_URL: postgresql+asyncpg://amrutam:amrutam@postgres-primary:5432/amrutam
+      REDIS_URL: redis://redis:6379/0
+    networks: [app]
+    profiles: [worker]
+
+  scheduler:
+    build: .
+    command: python -m amrutam.workers.scheduler
+    depends_on:
+      - postgres-primary
+    environment:
+      DATABASE_URL: postgresql+asyncpg://amrutam:amrutam@postgres-primary:5432/amrutam
+    networks: [app]
+    profiles: [worker]
+
+  postgres-primary:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: amrutam
+      POSTGRES_PASSWORD: amrutam
+      POSTGRES_DB: amrutam
+    ports: ["5432:5432"]
+    volumes: [pgdata-primary:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amrutam"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [app]
+
+  postgres-replica:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: amrutam
+      POSTGRES_PASSWORD: amrutam
+      POSTGRES_DB: amrutam
+    ports: ["5434:5432"]
+    volumes: [pgdata-replica:/var/lib/postgresql/data]
+    networks: [app]
+    profiles: [replica]
+    # Day 1-4 demo: standalone seed via same migrations. Prod: streaming replica.
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [app]
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://amrutam:amrutam@postgres-primary:5432/amrutam?sslmode=disable
+    networks: [app]
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    networks: [app]
+
+  minio:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [miniodata:/data]
+    networks: [app]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.102.0
+    command: ["--config=/etc/otelcol.yaml"]
+    volumes:
+      - ./infra/otel/otel-collector.yaml:/etc/otelcol.yaml:ro
+    ports: ["4317:4317", "4318:4318"]
+    networks: [app]
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+    networks: [app]
+
+  loki:
+    image: grafana/loki:2.9.6
+    ports: ["3100:3100"]
+    networks: [app]
+
+  tempo:
+    image: grafana/tempo:2.4.1
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./infra/tempo/tempo.yaml:/etc/tempo.yaml:ro
+    ports: ["3200:3200"]
+    networks: [app]
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    depends_on: [prometheus, loki, tempo]
+    ports: ["3000:3000"]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    networks: [app]
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports: ["8025:8025", "1025:1025"]
+    networks: [app]
+
+volumes:
+  pgdata-primary:
+  pgdata-replica:
+  redisdata:
+  miniodata:
+  jwt-secrets: # shared RS256 keypair — generated once by the first api replica
+
+networks:
+  app:
+    driver: bridge

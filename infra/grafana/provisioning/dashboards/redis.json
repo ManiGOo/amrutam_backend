@@ -1,0 +1,31 @@
+{
+  "title": "Amrutam Redis",
+  "panels": [
+    {
+      "title": "Hit ratio",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))"
+        }
+      ]
+    },
+    {
+      "title": "Connected clients",
+      "type": "timeseries",
+      "targets": [{ "expr": "redis_connected_clients" }]
+    },
+    {
+      "title": "Keys in db0 (idempotency + buckets live here)",
+      "type": "timeseries",
+      "targets": [{ "expr": "redis_db_keys{db=\"db0\"}" }]
+    },
+    {
+      "title": "Evicted keys/min (must stay 0 — evictions kill replays)",
+      "type": "timeseries",
+      "targets": [{ "expr": "rate(redis_evicted_keys_total[5m])" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

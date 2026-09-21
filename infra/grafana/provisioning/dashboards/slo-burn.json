@@ -1,0 +1,42 @@
+{
+  "title": "Amrutam SLO Burn",
+  "panels": [
+    {
+      "title": "Read p95 vs 200ms SLO",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{handler=~\"/v1/search.*|/v1/doctors.*\"}[5m])) by (le))"
+        },
+        { "expr": "0.2" }
+      ]
+    },
+    {
+      "title": "Write p95 vs 500ms SLO",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{handler=~\"/v1/bookings|/v1/payments\"}[5m])) by (le))"
+        },
+        { "expr": "0.5" }
+      ]
+    },
+    {
+      "title": "5xx error budget burn (>1% pages)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_request_duration_seconds_count{status=~\"5..\"}[5m])) / sum(rate(http_request_duration_seconds_count[5m]))"
+        },
+        { "expr": "0.01" }
+      ]
+    },
+    {
+      "title": "Outbox lag (must stay <60s)",
+      "type": "stat",
+      "targets": [{ "expr": "outbox_lag_seconds" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

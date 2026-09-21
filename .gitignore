@@ -1,0 +1,19 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+tls/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+alembic/versions/__pycache__/
+tests/demo/  # local demo scripts — never pushed
+INTERROGATION_PREP.md
+Backend Developer Assignment  (2).md
+build.md

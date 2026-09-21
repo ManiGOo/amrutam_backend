@@ -1,0 +1,28 @@
+{
+  "title": "Amrutam API RED",
+  "panels": [
+    {
+      "title": "Request rate",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum(rate(http_request_duration_seconds_count[5m]))" }]
+    },
+    {
+      "title": "Error rate (5xx)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "sum(rate(http_request_duration_seconds_count{status=~\"5..\"}[5m]))" }
+      ]
+    },
+    {
+      "title": "p95 latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}

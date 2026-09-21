@@ -1,0 +1,27 @@
+{
+  "title": "Amrutam Postgres",
+  "panels": [
+    {
+      "title": "Active connections (amrutam db)",
+      "type": "timeseries",
+      "targets": [{ "expr": "pg_stat_database_numbackends{datname=\"amrutam\"}" }]
+    },
+    {
+      "title": "Commit rate",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum(rate(pg_stat_database_xact_commit{datname=\"amrutam\"}[5m]))" }]
+    },
+    {
+      "title": "Replication lag seconds (alert if >10)",
+      "type": "stat",
+      "targets": [{ "expr": "max(pg_replication_lag_seconds)" }]
+    },
+    {
+      "title": "Conflicts / deadlocks",
+      "type": "timeseries",
+      "targets": [{ "expr": "sum(rate(pg_stat_database_conflicts{datname=\"amrutam\"}[5m]))" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1
+}
